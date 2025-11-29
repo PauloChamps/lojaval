@@ -3,25 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Controle de Estoque - Loja Val</title>
-
-<!-- Firebase compat -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-<script>
-// CONFIG FIREBASE (a mesma que você me enviou)
-const firebaseConfig = {
-    apiKey: "AIzaSyAAT3ZD1UC5v3oR0laFEIbb6BOX45wNC74",
-    authDomain: "lojaval-e5860.firebaseapp.com",
-    projectId: "lojaval-e5860",
-    storageBucket: "lojaval-e5860.firebasestorage.app",
-    messagingSenderId: "463231065986",
-    appId: "1:463231065986:web:076c3cce0f7013e8ef799b"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-</script>
-
 <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f2f2f2; }
     h1 { text-align: center; }
@@ -106,36 +87,17 @@ const db = firebase.firestore();
 </div>
 
 <script>
+// -------------------- BANCO LOCAL --------------------
+let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
+let editando = null;
 
-// -------------------- FIRESTORE --------------------
-let estoque = [];  
-let editando = null; 
-const colEstoque = db.collection("estoque");
-
-// -------------------- CARREGAR DO FIREBASE --------------------
-async function carregarEstoque() {
-    estoque = [];
-    try {
-        const snapshot = await colEstoque.get();
-        snapshot.forEach(docu => {
-            const data = docu.data();
-            estoque.push({
-                id: docu.id,
-                cod: data.cod,
-                nome: data.nome,
-                preco: data.preco,
-                qtd: data.qtd
-            });
-        });
-        renderTabela();
-    } catch (err) {
-        console.error("Erro ao carregar estoque do Firebase:", err);
-        alert("Erro ao carregar estoque do Firebase. Verifique o console.");
-    }
+// -------------------- SALVAR --------------------
+function salvar() {
+    localStorage.setItem("estoque", JSON.stringify(estoque));
 }
 
 // -------------------- ADICIONAR PRODUTO --------------------
-async function adicionarProduto() {
+function adicionarProduto() {
     let cod = codProd.value.trim();
     let nome = nomeProd.value.trim();
     let preco = parseFloat(valorProd.value.replace(",", "."));
@@ -146,15 +108,16 @@ async function adicionarProduto() {
         return;
     }
 
+    // EVITAR duplicados
     if (estoque.some(p => p.cod === cod)) {
         alert("Já existe um produto com esse código!");
         return;
     }
 
-    await colEstoque.add({ cod, nome, preco, qtd });
-
+    estoque.push({ cod, nome, preco, qtd });
+    salvar();
     limparCampos();
-    await carregarEstoque();
+    renderTabela();
     alert("Produto adicionado!");
 }
 
@@ -166,7 +129,7 @@ function limparCampos() {
     qtdProd.value = "";
 }
 
-// -------------------- RENDERIZAR --------------------
+// -------------------- RENDERIZAR TABELA --------------------
 function renderTabela() {
     let filtro = pesquisar.value.toLowerCase();
     let tbody = document.getElementById("tabelaEstoque");
@@ -202,14 +165,14 @@ function editar(index) {
     valorProd.value = p.preco;
     qtdProd.value = p.qtd;
 
-    editando = p.id; // agora usamos o ID do Firestore
+    editando = index;
 
     document.querySelector(".btn-add").innerText = "Salvar Alterações";
     document.querySelector(".btn-add").onclick = salvarEdicao;
 }
 
 // -------------------- SALVAR EDIÇÃO --------------------
-async function salvarEdicao() {
+function salvarEdicao() {
     let cod = codProd.value.trim();
     let nome = nomeProd.value.trim();
     let preco = parseFloat(valorProd.value);
@@ -220,33 +183,28 @@ async function salvarEdicao() {
         return;
     }
 
-    if (!editando) {
-        alert("Nenhum produto selecionado para edição.");
-        return;
-    }
+    estoque[editando] = { cod, nome, preco, qtd };
 
-    await colEstoque.doc(editando).update({ cod, nome, preco, qtd });
-
+    salvar();
     limparCampos();
     editando = null;
     document.querySelector(".btn-add").innerText = "Adicionar produto";
     document.querySelector(".btn-add").onclick = adicionarProduto;
-    await carregarEstoque();
+    renderTabela();
     alert("Produto atualizado!");
 }
 
 // -------------------- EXCLUIR --------------------
-async function excluir(index) {
+function excluir(index) {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
-    const id = estoque[index].id;
-    await colEstoque.doc(id).delete();
-    await carregarEstoque();
+    estoque.splice(index, 1);
+    salvar();
+    renderTabela();
 }
 
-// -------------------- INICIAR --------------------
-carregarEstoque();
-
+// -------------------- INICIALIZAÇÃO --------------------
+renderTabela();
 </script>
 
 </body>
