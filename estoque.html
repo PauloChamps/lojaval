@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Estoque - Loja Val</title>
+
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script>
+// CONFIG FIREBASE (a mesma que você me enviou)
+const firebaseConfig = {
+    apiKey: "AIzaSyAAT3ZD1UC5v3oR0laFEIbb6BOX45wNC74",
+    authDomain: "lojaval-e5860.firebaseapp.com",
+    projectId: "lojaval-e5860",
+    storageBucket: "lojaval-e5860.firebasestorage.app",
+    messagingSenderId: "463231065986",
+    appId: "1:463231065986:web:076c3cce0f7013e8ef799b"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f2f2f2; }
+    h1 { text-align: center; }
+    .card {
+        background: white;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+        padding: 8px;
+        margin: 5px 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        background: white;
+    }
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        text-align: center;
+    }
+    th { background: #ffe699; }
+    .btn {
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 5px;
+        border: none;
+        font-weight: bold;
+    }
+    .btn-add { background: #4caf50; color: white; }
+    .btn-edit { background: #2196f3; color: white; }
+    .btn-delete { background: #f44336; color: white; }
+</style>
+</head>
+<body>
+
+<h1>📦 Controle de Estoque - Loja Val</h1>
+
+<div class="card">
+    <h2>Adicionar Produto</h2>
+
+    <label>Código do Produto</label>
+    <input id="codProd" placeholder="Ex: 10001">
+
+    <label>Nome do Produto</label>
+    <input id="nomeProd" placeholder="Ex: Martelo">
+
+    <label>Preço (R$)</label>
+    <input id="valorProd" type="number" step="0.01" placeholder="Ex: 25.90">
+
+    <label>Quantidade</label>
+    <input id="qtdProd" type="number" placeholder="Ex: 10">
+
+    <button class="btn btn-add" onclick="adicionarProduto()">Adicionar produto</button>
+</div>
+
+<div class="card">
+    <h2>Pesquisar</h2>
+    <input id="pesquisar" oninput="renderTabela()" placeholder="Digite código ou nome...">
+</div>
+
+<div class="card">
+    <h2>Lista de Produtos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Nome</th>
+                <th>Preço</th>
+                <th>Quantidade</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaEstoque"></tbody>
+    </table>
+</div>
+
+<script>
+
+// -------------------- FIRESTORE --------------------
+let estoque = [];  
+let editando = null; 
+const colEstoque = db.collection("estoque");
+
+// -------------------- CARREGAR DO FIREBASE --------------------
+async function carregarEstoque() {
+    estoque = [];
+    try {
+        const snapshot = await colEstoque.get();
+        snapshot.forEach(docu => {
+            const data = docu.data();
+            estoque.push({
+                id: docu.id,
+                cod: data.cod,
+                nome: data.nome,
+                preco: data.preco,
+                qtd: data.qtd
+            });
+        });
+        renderTabela();
+    } catch (err) {
+        console.error("Erro ao carregar estoque do Firebase:", err);
+        alert("Erro ao carregar estoque do Firebase. Verifique o console.");
+    }
+}
+
+// -------------------- ADICIONAR PRODUTO --------------------
+async function adicionarProduto() {
+    let cod = codProd.value.trim();
+    let nome = nomeProd.value.trim();
+    let preco = parseFloat(valorProd.value.replace(",", "."));
+    let qtd = parseInt(qtdProd.value);
+
+    if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
+        alert("Preencha todos os campos obrigatórios!");
+        return;
+    }
+
+    if (estoque.some(p => p.cod === cod)) {
+        alert("Já existe um produto com esse código!");
+        return;
+    }
+
+    await colEstoque.add({ cod, nome, preco, qtd });
+
+    limparCampos();
+    await carregarEstoque();
+    alert("Produto adicionado!");
+}
+
+// -------------------- LIMPAR CAMPOS --------------------
+function limparCampos() {
+    codProd.value = "";
+    nomeProd.value = "";
+    valorProd.value = "";
+    qtdProd.value = "";
+}
+
+// -------------------- RENDERIZAR --------------------
+function renderTabela() {
+    let filtro = pesquisar.value.toLowerCase();
+    let tbody = document.getElementById("tabelaEstoque");
+    tbody.innerHTML = "";
+
+    estoque
+        .filter(p =>
+            p.cod.toLowerCase().includes(filtro) ||
+            p.nome.toLowerCase().includes(filtro)
+        )
+        .forEach((p, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.cod}</td>
+                    <td>${p.nome}</td>
+                    <td>R$ ${p.preco.toFixed(2)}</td>
+                    <td>${p.qtd}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editar(${index})">Editar</button>
+                        <button class="btn btn-delete" onclick="excluir(${index})">Excluir</button>
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// -------------------- EDITAR --------------------
+function editar(index) {
+    let p = estoque[index];
+
+    codProd.value = p.cod;
+    nomeProd.value = p.nome;
+    valorProd.value = p.preco;
+    qtdProd.value = p.qtd;
+
+    editando = p.id; // agora usamos o ID do Firestore
+
+    document.querySelector(".btn-add").innerText = "Salvar Alterações";
+    document.querySelector(".btn-add").onclick = salvarEdicao;
+}
+
+// -------------------- SALVAR EDIÇÃO --------------------
+async function salvarEdicao() {
+    let cod = codProd.value.trim();
+    let nome = nomeProd.value.trim();
+    let preco = parseFloat(valorProd.value);
+    let qtd = parseInt(qtdProd.value);
+
+    if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
+        alert("Preencha todos os campos corretamente!");
+        return;
+    }
+
+    if (!editando) {
+        alert("Nenhum produto selecionado para edição.");
+        return;
+    }
+
+    await colEstoque.doc(editando).update({ cod, nome, preco, qtd });
+
+    limparCampos();
+    editando = null;
+    document.querySelector(".btn-add").innerText = "Adicionar produto";
+    document.querySelector(".btn-add").onclick = adicionarProduto;
+    await carregarEstoque();
+    alert("Produto atualizado!");
+}
+
+// -------------------- EXCLUIR --------------------
+async function excluir(index) {
+    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+
+    const id = estoque[index].id;
+    await colEstoque.doc(id).delete();
+    await carregarEstoque();
+}
+
+// -------------------- INICIAR --------------------
+carregarEstoque();
+
+</script>
+
+</body>
+</html>
