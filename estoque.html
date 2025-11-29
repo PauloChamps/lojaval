@@ -86,141 +86,42 @@
     </table>
 </div>
 
-<!-- ========================= FIREBASE + JS ========================= -->
-
-<script type="module">
-/* -------------------------------------------------------
-   IMPORTANDO FIREBASE (MESMO PADRÃO DO SEU PROJETO QUE FUNCIONA)
---------------------------------------------------------*/
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
-
-/* -------------------------------------------------------
-   CONFIGURAÇÃO DO FIREBASE DO SEU PROJETO
---------------------------------------------------------*/
-const firebaseConfig = {
-    apiKey: "AIzaSyAAT3ZD1UC5v3oR0laFEIbb6BOX45wNC74",
-    authDomain: "lojaval-e5860.firebaseapp.com",
-    projectId: "lojaval-e5860",
-    storageBucket: "lojaval-e5860.firebasestorage.app",
-    messagingSenderId: "463231065986",
-    appId: "1:463231065986:web:076c3cce0f7013e8ef799b"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* -------------------------------------------------------
-   VARIÁVEIS GLOBAIS
---------------------------------------------------------*/
-let estoque = [];
+<script>
+// -------------------- BANCO LOCAL --------------------
+let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
 let editando = null;
 
-/* -------------------------------------------------------
-   CARREGAR ESTOQUE DO FIREBASE
---------------------------------------------------------*/
-async function carregarEstoque() {
-    estoque = [];
-    const snap = await getDocs(collection(db, "estoque"));
-
-    snap.forEach(docSnap => {
-        estoque.push({ 
-            id: docSnap.id,
-            ...docSnap.data()
-        });
-    });
-
-    renderTabela();
+// -------------------- SALVAR --------------------
+function salvar() {
+    localStorage.setItem("estoque", JSON.stringify(estoque));
 }
 
-/* -------------------------------------------------------
-   ADICIONAR PRODUTO
---------------------------------------------------------*/
-window.adicionarProduto = async function () {
+// -------------------- ADICIONAR PRODUTO --------------------
+function adicionarProduto() {
     let cod = codProd.value.trim();
     let nome = nomeProd.value.trim();
-    let preco = parseFloat(valorProd.value);
+    let preco = parseFloat(valorProd.value.replace(",", "."));
     let qtd = parseInt(qtdProd.value);
 
     if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
-        alert("Preencha todos os campos!");
+        alert("Preencha todos os campos obrigatórios!");
         return;
     }
 
-    // EVITANDO duplicados
+    // EVITAR duplicados
     if (estoque.some(p => p.cod === cod)) {
         alert("Já existe um produto com esse código!");
         return;
     }
 
-    await addDoc(collection(db, "estoque"), { cod, nome, preco, qtd });
-
+    estoque.push({ cod, nome, preco, qtd });
+    salvar();
     limparCampos();
-    carregarEstoque();
+    renderTabela();
     alert("Produto adicionado!");
-};
+}
 
-/* -------------------------------------------------------
-   EDITAR
---------------------------------------------------------*/
-window.editar = function(index) {
-    let p = estoque[index];
-
-    codProd.value = p.cod;
-    nomeProd.value = p.nome;
-    valorProd.value = p.preco;
-    qtdProd.value = p.qtd;
-
-    editando = p.id;
-
-    document.querySelector(".btn-add").innerText = "Salvar Alterações";
-    document.querySelector(".btn-add").onclick = salvarEdicao;
-};
-
-/* -------------------------------------------------------
-   SALVAR EDIÇÃO
---------------------------------------------------------*/
-window.salvarEdicao = async function () {
-    let cod = codProd.value.trim();
-    let nome = nomeProd.value.trim();
-    let preco = parseFloat(valorProd.value);
-    let qtd = parseInt(qtdProd.value);
-
-    if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
-        alert("Preencha os campos corretamente!");
-        return;
-    }
-
-    const ref = doc(db, "estoque", editando);
-
-    await updateDoc(ref, { cod, nome, preco, qtd });
-
-    limparCampos();
-    editando = null;
-    document.querySelector(".btn-add").innerText = "Adicionar Produto";
-    document.querySelector(".btn-add").onclick = adicionarProduto;
-
-    carregarEstoque();
-    alert("Produto atualizado!");
-};
-
-/* -------------------------------------------------------
-   EXCLUIR
---------------------------------------------------------*/
-window.excluir = async function(index) {
-    if (!confirm("Deseja realmente excluir este produto?")) return;
-
-    const id = estoque[index].id;
-
-    await deleteDoc(doc(db, "estoque", id));
-    carregarEstoque();
-};
-
-/* -------------------------------------------------------
-   LIMPAR CAMPOS
---------------------------------------------------------*/
+// -------------------- LIMPAR CAMPOS --------------------
 function limparCampos() {
     codProd.value = "";
     nomeProd.value = "";
@@ -228,16 +129,14 @@ function limparCampos() {
     qtdProd.value = "";
 }
 
-/* -------------------------------------------------------
-   RENDERIZAR TABELA
---------------------------------------------------------*/
-window.renderTabela = function () {
+// -------------------- RENDERIZAR TABELA --------------------
+function renderTabela() {
     let filtro = pesquisar.value.toLowerCase();
     let tbody = document.getElementById("tabelaEstoque");
     tbody.innerHTML = "";
 
     estoque
-        .filter(p => 
+        .filter(p =>
             p.cod.toLowerCase().includes(filtro) ||
             p.nome.toLowerCase().includes(filtro)
         )
@@ -255,13 +154,57 @@ window.renderTabela = function () {
                 </tr>
             `;
         });
-};
+}
 
-/* -------------------------------------------------------
-   INICIAR AO ABRIR A PÁGINA
---------------------------------------------------------*/
-carregarEstoque();
+// -------------------- EDITAR --------------------
+function editar(index) {
+    let p = estoque[index];
 
+    codProd.value = p.cod;
+    nomeProd.value = p.nome;
+    valorProd.value = p.preco;
+    qtdProd.value = p.qtd;
+
+    editando = index;
+
+    document.querySelector(".btn-add").innerText = "Salvar Alterações";
+    document.querySelector(".btn-add").onclick = salvarEdicao;
+}
+
+// -------------------- SALVAR EDIÇÃO --------------------
+function salvarEdicao() {
+    let cod = codProd.value.trim();
+    let nome = nomeProd.value.trim();
+    let preco = parseFloat(valorProd.value);
+    let qtd = parseInt(qtdProd.value);
+
+    if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
+        alert("Preencha todos os campos corretamente!");
+        return;
+    }
+
+    estoque[editando] = { cod, nome, preco, qtd };
+
+    salvar();
+    limparCampos();
+    editando = null;
+    document.querySelector(".btn-add").innerText = "Adicionar produto";
+    document.querySelector(".btn-add").onclick = adicionarProduto;
+    renderTabela();
+    alert("Produto atualizado!");
+}
+
+// -------------------- EXCLUIR --------------------
+function excluir(index) {
+    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+
+    estoque.splice(index, 1);
+    salvar();
+    renderTabela();
+}
+
+// -------------------- INICIALIZAÇÃO --------------------
+renderTabela();
 </script>
 
 </body>
