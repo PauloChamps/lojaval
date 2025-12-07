@@ -88,27 +88,29 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// Configuração do Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyAAT3ZD1UC5v3oR0laFEIbb6BOX45wNC74",
-    authDomain: "lojaval-e5860.firebaseapp.com",
-    projectId: "lojaval-e5860",
-    storageBucket: "lojaval-e5860.firebasestorage.app",
-    messagingSenderId: "463231065986",
-    appId: "1:463231065986:web:076c3cce0f7013e8ef799b"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  // Configuração do Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCO6FASXZPmeND_6Y1ro4CoHpRdnEJO_7U",
+    authDomain: "lojadaval-9d562.firebaseapp.com",
+    projectId: "lojadaval-9d562",
+    storageBucket: "lojadaval-9d562.firebasestorage.app",
+    messagingSenderId: "421395965578",
+    appId: "1:421395965578:web:66b9a4d71eef44349b6f73"
+  };
 
-// Função para adicionar produto no Firestore
-async function adicionarProduto() {
-    let cod = codProd.value.trim();
-    let nome = nomeProd.value.trim();
-    let preco = parseFloat(valorProd.value.replace(",", "."));
-    let qtd = parseInt(qtdProd.value);
+  // Inicializar Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Função para adicionar produto no Firestore
+  async function adicionarProduto() {
+    let cod = document.getElementById("codProd").value.trim();
+    let nome = document.getElementById("nomeProd").value.trim();
+    let preco = parseFloat(document.getElementById("valorProd").value.replace(",", "."));
+    let qtd = parseInt(document.getElementById("qtdProd").value);
 
     if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
         alert("Preencha todos os campos obrigatórios!");
@@ -125,76 +127,85 @@ async function adicionarProduto() {
     }
 
     // Adicionar produto ao Firestore
-    await addDoc(collection(db, "estoque"), {
-        cod,
-        nome,
-        preco,
-        qtd
-    });
+    try {
+        await addDoc(collection(db, "estoque"), {
+            cod,
+            nome,
+            preco,
+            qtd
+        });
+        alert("Produto adicionado!");
+        renderTabela();
+        limparCampos();
+    } catch (error) {
+        console.error("Erro ao adicionar produto: ", error);
+        alert("Erro ao adicionar o produto.");
+    }
+  }
 
-    alert("Produto adicionado!");
-    renderTabela();
-    limparCampos();
-}
+  // Função para limpar os campos
+  function limparCampos() {
+    document.getElementById("codProd").value = "";
+    document.getElementById("nomeProd").value = "";
+    document.getElementById("valorProd").value = "";
+    document.getElementById("qtdProd").value = "";
+  }
 
-// Função para limpar os campos
-function limparCampos() {
-    codProd.value = "";
-    nomeProd.value = "";
-    valorProd.value = "";
-    qtdProd.value = "";
-}
-
-// Função para renderizar a tabela de produtos
-async function renderTabela() {
+  // Função para renderizar a tabela de produtos
+  async function renderTabela() {
     const filtro = pesquisar.value.toLowerCase();
     const tbody = document.getElementById("tabelaEstoque");
     tbody.innerHTML = "";
 
-    const querySnapshot = await getDocs(collection(db, "estoque"));
-    querySnapshot.forEach((docSnap) => {
-        const p = docSnap.data();
-        if (
-            p.cod.toLowerCase().includes(filtro) ||
-            p.nome.toLowerCase().includes(filtro)
-        ) {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${p.cod}</td>
-                    <td>${p.nome}</td>
-                    <td>R$ ${p.preco.toFixed(2)}</td>
-                    <td>${p.qtd}</td>
-                    <td>
-                        <button class="btn btn-edit" onclick="editar('${docSnap.id}')">Editar</button>
-                        <button class="btn btn-delete" onclick="excluir('${docSnap.id}')">Excluir</button>
-                    </td>
-                </tr>
-            `;
-        }
-    });
-}
+    try {
+        const querySnapshot = await getDocs(collection(db, "estoque"));
+        querySnapshot.forEach((docSnap) => {
+            const p = docSnap.data();
+            if (
+                p.cod.toLowerCase().includes(filtro) ||
+                p.nome.toLowerCase().includes(filtro)
+            ) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.cod}</td>
+                        <td>${p.nome}</td>
+                        <td>R$ ${p.preco.toFixed(2)}</td>
+                        <td>${p.qtd}</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editar('${docSnap.id}')">Editar</button>
+                            <button class="btn btn-delete" onclick="excluir('${docSnap.id}')">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+    } catch (error) {
+        console.error("Erro ao carregar produtos: ", error);
+        alert("Erro ao carregar os produtos.");
+    }
+  }
 
-// Função para editar um produto
-async function editar(id) {
+  // Função para editar um produto
+  async function editar(id) {
     const docRef = doc(db, "estoque", id);
     const docSnap = await getDocs(docRef);
     const p = docSnap.data();
 
-    codProd.value = p.cod;
-    nomeProd.value = p.nome;
-    valorProd.value = p.preco;
-    qtdProd.value = p.qtd;
+    document.getElementById("codProd").value = p.cod;
+    document.getElementById("nomeProd").value = p.nome;
+    document.getElementById("valorProd").value = p.preco;
+    document.getElementById("qtdProd").value = p.qtd;
 
     document.querySelector(".btn-add").innerText = "Salvar Alterações";
     document.querySelector(".btn-add").onclick = () => salvarEdicao(id);
-}
+  }
 
-// Função para salvar a edição de um produto
-async function salvarEdicao(id) {
-    let cod = codProd.value.trim();
-    let nome = nomeProd.value.trim();
-    let preco = parseFloat(valorProd.value.replace(",", "."));
-    let qtd = parseInt(qtdProd.value);
+  // Função para salvar a edição de um produto
+  async function salvarEdicao(id) {
+    let cod = document.getElementById("codProd").value.trim();
+    let nome = document.getElementById("nomeProd").value.trim();
+    let preco = parseFloat(document.getElementById("valorProd").value.replace(",", "."));
+    let qtd = parseInt(document.getElementById("qtdProd").value);
 
     if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
         alert("Preencha todos os campos corretamente!");
@@ -202,32 +213,40 @@ async function salvarEdicao(id) {
     }
 
     const docRef = doc(db, "estoque", id);
-    await updateDoc(docRef, {
-        cod,
-        nome,
-        preco,
-        qtd
-    });
-
-    alert("Produto atualizado!");
-    renderTabela();
-    limparCampos();
-    document.querySelector(".btn-add").innerText = "Adicionar produto";
-    document.querySelector(".btn-add").onclick = adicionarProduto;
-}
-
-// Função para excluir um produto
-async function excluir(id) {
-    if (confirm("Tem certeza que deseja excluir este produto?")) {
-        await deleteDoc(doc(db, "estoque", id));
-        alert("Produto excluído!");
+    try {
+        await updateDoc(docRef, {
+            cod,
+            nome,
+            preco,
+            qtd
+        });
+        alert("Produto atualizado!");
         renderTabela();
+        limparCampos();
+        document.querySelector(".btn-add").innerText = "Adicionar produto";
+        document.querySelector(".btn-add").onclick = adicionarProduto;
+    } catch (error) {
+        console.error("Erro ao salvar edição: ", error);
+        alert("Erro ao atualizar o produto.");
     }
-}
+  }
 
-// Chamada inicial para renderizar a tabela
-renderTabela();
+  // Função para excluir um produto
+  async function excluir(id) {
+    if (confirm("Tem certeza que deseja excluir este produto?")) {
+        try {
+            await deleteDoc(doc(db, "estoque", id));
+            alert("Produto excluído!");
+            renderTabela();
+        } catch (error) {
+            console.error("Erro ao excluir produto: ", error);
+            alert("Erro ao excluir o produto.");
+        }
+    }
+  }
 
+  // Chamada inicial para renderizar a tabela
+  renderTabela();
 </script>
 
 <button onclick="window.location.href='index.html'">⬅ Voltar</button>
