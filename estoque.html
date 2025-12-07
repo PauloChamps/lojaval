@@ -88,10 +88,9 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
-  // Sua configuração Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyCO6FASXZPmeND_6Y1ro4CoHpRdnEJO_7U",
     authDomain: "lojadaval-9d562.firebaseapp.com",
@@ -101,7 +100,6 @@
     appId: "1:421395965578:web:66b9a4d71eef44349b6f73"
   };
 
-  // Inicializar Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
@@ -117,8 +115,8 @@
         return;
     }
 
-    // Adicionar produto ao Firestore
     try {
+        // Adicionar produto ao Firestore
         await addDoc(collection(db, "estoque"), {
             cod,
             nome,
