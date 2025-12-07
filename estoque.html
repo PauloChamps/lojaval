@@ -89,7 +89,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
   // Sua configuração Firebase
   const firebaseConfig = {
@@ -114,15 +114,6 @@
 
     if (!cod || !nome || isNaN(preco) || isNaN(qtd)) {
         alert("Preencha todos os campos obrigatórios!");
-        return;
-    }
-
-    // Verificar se já existe um produto com esse código
-    const q = query(collection(db, "estoque"), where("cod", "==", cod));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        alert("Já existe um produto com esse código!");
         return;
     }
 
