@@ -1,85 +1,77 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Loja Val - Vendas</title>
+    <meta charset="UTF-8">
+    <title>Loja Val - Vendas</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+        h2 { margin-top: 0; }
 
-<style>
-    body {
-        font-family: Arial;
-        margin: 20px;
-    }
-    h2 { margin-top: 0; }
+        .row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .col-50 {
+            width: calc(50% - 10px);
+            min-width: 250px;
+        }
 
-    /* GRID DE 2 COLUNAS */
-    .row {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    .col-50 {
-        width: calc(50% - 10px);
-        min-width: 250px;
-    }
-    .col-100 {
-        width: 100%;
-    }
+        input, select, button {
+            padding: 8px;
+            margin: 6px 0;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        .btn {
+            background: #ffcc00;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #e6b800; }
 
-    input, select, button {
-        padding: 8px;
-        margin: 6px 0;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 15px;
-    }
-    .btn {
-        background: #ffcc00;
-        border: none;
-        cursor: pointer;
-        font-size: 16px;
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-    }
-    .btn:hover { background: #e6b800; }
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
 
-    .box {
-        border: 1px solid #ccc;
-        padding: 15px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: left;
+        }
+        th { background: #eee; }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    th, td {
-        border: 1px solid #999;
-        padding: 8px;
-        text-align: left;
-    }
-    th { background: #eee; }
-
-    .totalFinal {
-        font-size: 22px;
-        font-weight: bold;
-        text-align: right;
-        margin-top: 20px;
-    }
-</style>
+        .totalFinal {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 
 <body>
 
 <h2>Nova Venda</h2>
 
-<button onclick="window.location.href='index.html'">⬅ Voltar</button>
-
 <div class="box">
     <h3>Informações da Venda</h3>
-
     <div class="row">
         <div class="col-50">
             <label>Data da venda</label>
@@ -95,7 +87,6 @@
 
 <div class="box">
     <h3>Adicionar Produto</h3>
-
     <div class="row">
         <div class="col-50">
             <label>Código do produto</label>
@@ -139,7 +130,6 @@
 
 <div class="box">
     <h3>Método de Pagamento (obrigatório)</h3>
-
     <select id="pagamento">
         <option value="">Selecione...</option>
         <option value="pix">PIX</option>
@@ -153,80 +143,126 @@
 </div>
 
 <script>
-/* --- NÃO ALTEREI NADA DO JS --- */
-/* Se quiser integrar ao estoque depois, também faço. */
+  // Lista de produtos manualmente definida
+  const produtos = [
+      { codigo: "0001", nome: "Perfume", valor: 22.00 },
+      { codigo: "0002", nome: "Creme", valor: 7.50 },
+      { codigo: "0003", nome: "Shampoo", valor: 4.00 },
+      { codigo: "0004", nome: "Óleo Corporal", valor: 8.80 }
+  ];
 
-const produtos = [
-    { codigo: "0001", nome: "Perfume", valor: 22.00 },
-    { codigo: "0002", nome: "Creme", valor: 7.50 },
-    { codigo: "0003", nome: "Shampoo", valor: 4.00 },
-    { codigo: "0004", nome: "Óleo Corporal", valor: 8.80 }
-];
+  let itensVenda = [];
 
-document.getElementById("codigoProd").addEventListener("input", function () {
-    const p = produtos.find(x => x.codigo === this.value);
-    document.getElementById("nomeProd").value = p ? p.nome : "";
-    document.getElementById("valorProd").value = p ? p.valor.toFixed(2) : "";
-});
+  // Atualiza os campos de nome e valor ao digitar o código do produto
+  document.getElementById("codigoProd").addEventListener("input", function () {
+      const p = produtos.find(x => x.codigo === this.value);
+      document.getElementById("nomeProd").value = p ? p.nome : "";
+      document.getElementById("valorProd").value = p ? p.valor.toFixed(2) : "";
+  });
 
-let itensVenda = [];
+  // Função para adicionar o produto à venda
+  function adicionarProduto() {
+      const cod = document.getElementById("codigoProd").value;
+      const qtd = parseInt(document.getElementById("qtdProd").value);
+      const prod = produtos.find(x => x.codigo === cod);
 
-function adicionarProduto() {
-    const cod = document.getElementById("codigoProd").value;
-    const qtd = parseInt(document.getElementById("qtdProd").value);
-    const prod = produtos.find(x => x.codigo === cod);
+      if (!prod) return alert("Código de produto inválido!");
+      if (!qtd || qtd <= 0) return alert("Quantidade inválida!");
 
-    if (!prod) return alert("Código de produto inválido!");
-    if (!qtd || qtd <= 0) return alert("Quantidade inválida!");
+      itensVenda.push({
+          codigo: prod.codigo,
+          nome: prod.nome,
+          qtd,
+          valor: prod.valor,
+          total: prod.valor * qtd
+      });
 
-    itensVenda.push({
-        codigo: prod.codigo,
-        nome: prod.nome,
-        qtd,
-        valor: prod.valor,
-        total: prod.valor * qtd
-    });
+      atualizarTabela();
+      limparCamposProduto();
+  }
 
-    atualizarTabela();
-    limparCamposProduto();
-}
+  // Atualiza a tabela de itens da venda
+  function atualizarTabela() {
+      const tbody = document.querySelector("#tabelaItens tbody");
+      tbody.innerHTML = "";
 
-function atualizarTabela() {
-    const tbody = document.querySelector("#tabelaItens tbody");
-    tbody.innerHTML = "";
+      let totalFinal = 0;
 
-    let totalFinal = 0;
+      itensVenda.forEach(item => {
+          tbody.innerHTML += `
+              <tr>
+                  <td>${item.codigo}</td>
+                  <td>${item.nome}</td>
+                  <td>${item.qtd}</td>
+                  <td>R$ ${item.valor.toFixed(2)}</td>
+                  <td>R$ ${item.total.toFixed(2)}</td>
+              </tr>`;
+          totalFinal += item.total;
+      });
 
-    itensVenda.forEach(item => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${item.codigo}</td>
-                <td>${item.nome}</td>
-                <td>${item.qtd}</td>
-                <td>R$ ${item.valor.toFixed(2)}</td>
-                <td>R$ ${item.total.toFixed(2)}</td>
-            </tr>`;
-        totalFinal += item.total;
-    });
+      document.getElementById("valorFinal").textContent =
+          "Total da venda: R$ " + totalFinal.toFixed(2);
+  }
 
-    document.getElementById("valorFinal").textContent =
-        "Total da venda: R$ " + totalFinal.toFixed(2);
-}
+  // Limpa os campos do produto
+  function limparCamposProduto() {
+      document.getElementById("codigoProd").value = "";
+      document.getElementById("nomeProd").value = "";
+      document.getElementById("valorProd").value = "";
+      document.getElementById("qtdProd").value = "";
+  }
 
-function limparCamposProduto() {
-    codigoProd.value = "";
-    nomeProd.value = "";
-    valorProd.value = "";
-    qtdProd.value = "";
-}
+  // Função para finalizar a venda e salvar em localStorage
+  function finalizarVenda() {
+      if (itensVenda.length === 0) return alert("Adicione pelo menos um produto!");
+      if (!document.getElementById("pagamento").value) return alert("Selecione um método de pagamento!");
 
-function finalizarVenda() {
-    if (itensVenda.length === 0) return alert("Adicione pelo menos um produto!");
-    if (!pagamento.value) return alert("Selecione um método de pagamento!");
+      const dataVenda = document.getElementById("dataVenda").value;
+      const cliente = document.getElementById("cliente").value || "Não informado";
+      const pagamento = document.getElementById("pagamento").value;
 
-    alert("Venda finalizada com sucesso!");
-}
+      const vendaData = {
+          dataVenda,
+          cliente,
+          pagamento,
+          itens: itensVenda,
+          total: calcularTotalVenda(),
+          status: pagamento === "prazo" ? "Pendente" : "Pago",
+          parcelas: pagamento === "prazo" ? getParcelas() : [], // Para "a prazo", define as parcelas
+      };
+
+      // Salva a venda no localStorage
+      let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+      vendas.push(vendaData);
+      localStorage.setItem("vendas", JSON.stringify(vendas));
+
+      alert("Venda finalizada com sucesso!");
+      window.location.href = 'index.html'; // Redireciona para a página de consultar vendas
+  }
+
+  // Calcula o total da venda
+  function calcularTotalVenda() {
+      return itensVenda.reduce((total, item) => total + item.total, 0);
+  }
+
+  // Função para pegar as parcelas caso o pagamento seja a prazo
+  function getParcelas() {
+      const numParcelas = prompt("Quantas parcelas?");
+      const valorTotal = calcularTotalVenda();
+      const parcelas = [];
+      for (let i = 0; i < numParcelas; i++) {
+          const dataParcela = prompt(`Data da parcela ${i + 1} (dd/mm/yyyy):`);
+          parcelas.push({
+              valor: (valorTotal / numParcelas).toFixed(2),
+              data: dataParcela
+          });
+      }
+      return parcelas;
+  }
 </script>
+
+
+<button onclick="window.location.href='index.html'">⬅ Voltar</button>
 
 </body>
 </html>
